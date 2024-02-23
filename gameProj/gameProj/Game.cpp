@@ -5,6 +5,8 @@
 #include "pch.h"
 #include "Game.h"
 #include <SpriteBatch.h>
+#include <CommonStates.h>
+#include "AnimatedTexture.h"
 
 extern void ExitGame() noexcept;
 
@@ -58,7 +60,8 @@ void Game::Tick()
 void Game::Update(DX::StepTimer const& timer)
 {
     float elapsedTime = float(timer.GetElapsedSeconds());
-
+    m_ship->Update(elapsedTime);
+    m_stars->Update(elapsedTime * 500);
     // TODO: Add your game logic here.
     elapsedTime;
 }
@@ -82,8 +85,8 @@ void Game::Render()
     // TODO: Add your rendering code here.
     m_spriteBatch-> Begin(SpriteSortMode_Deferred,nullptr, m_states-> LinearWrap());
     m_spriteBatch->Draw(m_background.Get(), m_fullscreenRect);
-    m_spriteBatch->Draw(m_texture.Get(), m_screenPos, nullptr,
-        Colors::White,cosf(time), m_origin,cosf(time));
+    m_stars->Draw(m_spriteBatch.get());
+    m_ship->Draw(m_spriteBatch.get(), m_shipPos);
     m_spriteBatch->End();
 
     context;
@@ -177,35 +180,29 @@ void Game::CreateDeviceDependentResources()
 {
     auto device = m_deviceResources->GetD3DDevice();
     m_graphicsMemory = make_unique<GraphicsMemory>(device);
+
     auto context = m_deviceResources->GetD3DDeviceContext();
     m_spriteBatch = make_unique<SpriteBatch>(context);
 
+    unique_ptr<CommonStates> states;
+    states = make_unique<CommonStates>(device);
+
     // TODO: Initialize device dependent objects here (independent of window size).
     ComPtr<ID3D11Resource> resource;
-    DX::ThrowIfFailed(
-        CreateWICTextureFromFile(
-            device
-            , L"cat.png"
-            , resource.GetAddressOf()
-            , m_texture.ReleaseAndGetAddressOf()));
-    ComPtr<ID3D11Texture2D> cat;
-    DX::ThrowIfFailed(resource.As(&cat));
-
-    CD3D11_TEXTURE2D_DESC catDesc;
-    cat->GetDesc(&catDesc);
+   
 
     DX::ThrowIfFailed(
-        CreateWICTextureFromFile(device, L"sunset.jpg", nullptr,
+        CreateWICTextureFromFile(device, L"starfield.png", nullptr,
             m_background.ReleaseAndGetAddressOf()));
-    
-    m_states = make_unique<CommonStates>(device);
-    m_origin.x = float(catDesc.Width / 2);
-    m_origin.y = float(catDesc.Height / 2);
+    DX::ThrowIfFailed(
+        CreateWICTextureFromFile(device, L"shipanimated.png",
+        nullptr, m_texture.ReleaseAndGetAddressOf()));
 
-    m_tileRect.left = catDesc.Width * 2;
-    m_tileRect.right = catDesc.Width * 6;
-    m_tileRect.top = catDesc.Height * 2;
-    m_tileRect.bottom = catDesc.Height * 6;
+    m_ship = make_unique<AnimatedTexture>();
+    m_ship->Load(m_texture.Get(), 4, 20);
+    m_states = make_unique<CommonStates>(device);
+    m_stars = make_unique<ScrollingBackground>();
+    m_stars->Load(m_background.Get());
 
     device;
 }
@@ -218,15 +215,20 @@ void Game::CreateWindowSizeDependentResources()
     m_fullscreenRect = m_deviceResources->GetOutputSize();
     m_screenPos.x = float(size.right) / 2.f;
     m_screenPos.y = float(size.bottom) / 2.f; 
+    m_shipPos.x = float(size.right / 2);
+    m_shipPos.y = float((size.bottom / 2) + (size.bottom / 4));
+    m_stars->SetWindow(size.right, size.bottom);
 }
 
 void Game::OnDeviceLost()
 {
+    m_ship.reset();
     m_texture.Reset();
     m_graphicsMemory.reset();
     m_spriteBatch.reset();
     m_states.reset();
     m_background.Reset();
+    m_stars.reset();
     // TODO: Add Direct3D resource cleanup here.
 }
 

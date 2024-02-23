@@ -6,6 +6,9 @@
 
 #include "DeviceResources.h"
 #include "StepTimer.h"
+#include <CommonStates.h>
+#include "AnimatedTexture.h"
+#include "ScrollingBackground.h"
 using namespace std;
 
 // A basic game implementation that creates a D3D11 device and
@@ -13,7 +16,8 @@ using namespace std;
 class Game final : public DX::IDeviceNotify
 {
 public:
-
+    
+    
     Game() noexcept(false);
     ~Game() = default;
 
@@ -70,7 +74,10 @@ private:
     RECT m_tileRect;
     RECT m_fullscreenRect;
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>m_background;
+    unique_ptr<AnimatedTexture> m_ship;
+    DirectX::SimpleMath::Vector2 m_shipPos;
 
-
+    unique_ptr<ScrollingBackground> m_stars;
+    
 
 };
