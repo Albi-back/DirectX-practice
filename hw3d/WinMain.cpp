@@ -1,7 +1,10 @@
 #include <Windows.h>
 
+
 LRESULT CALLBACK WndProc(HWND hWnd,UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	
+	
 	switch (msg)
 	{
 	case WM_CLOSE:
@@ -33,6 +36,7 @@ int CALLBACK WinMain(
 	wc.lpszMenuName = nullptr;
 	wc.lpszClassName = pClassName;
 	wc.hIconSm = nullptr;
+
 	//create the window
 	RegisterClassEx(&wc);
 	HWND hWnd = CreateWindowEx(
@@ -41,6 +45,7 @@ int CALLBACK WinMain(
 		WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU,
 		200, 200, 440, 480,
 		nullptr, nullptr, hInstance, nullptr);
+
 	//show the window
 	ShowWindow(hWnd, SW_SHOW);
 	MSG msg;
